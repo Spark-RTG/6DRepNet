@@ -1,3 +1,10 @@
+# check out here: https://github.com/thohemp/6drepnet
+#
+# cd 6DRepNet
+# source HeadPoseEstimation/bin/activate
+# python sixdrepnet/demo.py  --snapshot 6DRepNet_300W_LP_AFLW2000.pth --cam 0
+#
+
 import time
 import math
 import re
@@ -53,7 +60,7 @@ transformations = transforms.Compose([transforms.Resize(224),
 if __name__ == '__main__':
     args = parse_args()
     cudnn.enabled = True
-    gpu = args.gpu_id
+    gpu = -1
     cam = args.cam_id
     snapshot_path = args.snapshot
     model = SixDRepNet(backbone_name='RepVGG-B1g2',
@@ -73,7 +80,7 @@ if __name__ == '__main__':
         model.load_state_dict(saved_state_dict['model_state_dict'])
     else:
         model.load_state_dict(saved_state_dict)
-    model.cuda(gpu)
+    # model.cuda(gpu)
 
     # Test the Model
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
@@ -85,11 +92,18 @@ if __name__ == '__main__':
         raise IOError("Cannot open webcam")
 
     with torch.no_grad():
+        temp = True
+        cycle_start = time.time()
         while True:
             ret, frame = cap.read()
-
+            start = time.time()
             faces = detector(frame)
-
+            end = time.time()
+            print('Landmarks detection: %2f ms' % ((end - start)*1000.))
+            if (temp):
+                box, landmarks, score = faces[0]
+                # print(landmarks)
+                temp = False
             for box, landmarks, score in faces:
 
                 # Print the location of each face in this image
@@ -112,7 +126,7 @@ if __name__ == '__main__':
                 img = img.convert('RGB')
                 img = transformations(img)
 
-                img = torch.Tensor(img[None, :]).cuda(gpu)
+                img = torch.Tensor(img[None, :])
 
                 c = cv2.waitKey(1)
                 if c == 27:
@@ -135,3 +149,6 @@ if __name__ == '__main__':
 
             cv2.imshow("Demo", frame)
             cv2.waitKey(5)
+            cycle_end = time.time()
+            print('Cycle time: %2f ms' % ((cycle_end - cycle_start)*1000.))
+            cycle_start = cycle_end

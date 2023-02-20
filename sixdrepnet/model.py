@@ -11,8 +11,8 @@ class SixDRepNet(nn.Module):
                  backbone_name, backbone_file, deploy,
                  bins=(1, 2, 3, 6),
                  droBatchNorm=nn.BatchNorm2d,
-                 pretrained=True, 
-                 gpu_id=0):
+                 pretrained=True,
+                 gpu_id=-1):
         super(SixDRepNet, self).__init__()
         self.gpu_id = gpu_id
         repvgg_fn = get_RepVGG_func_by_name(backbone_name)
@@ -72,7 +72,7 @@ class SixDRepNet2(nn.Module):
         self.avgpool = nn.AvgPool2d(7)
 
         self.linear_reg = nn.Linear(512*block.expansion,6)
-      
+
 
 
         # Vestigial layer from previous experiments
@@ -117,7 +117,7 @@ class SixDRepNet2(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
 
-        x = self.linear_reg(x)        
+        x = self.linear_reg(x)
         out = utils.compute_rotation_matrix_from_ortho6d(x)
 
         return out
